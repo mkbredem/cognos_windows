@@ -1,0 +1,99 @@
+---
+- name: Install Cognos Server
+  hosts: cognos_servers
+  tasks:
+    - name: Ensure Cognos ResponseFiles Directory Exists
+      win_file:
+        path: C:\CognosData\ResponseFiles
+        state: directory
+
+    - name: Download and Unzip Software
+      win_copy:
+        src: files/
+        dest: C:\CognosData\Software
+      with_items:
+        - transfrm_win_11.0.0.101_ml.tar
+        - ca_client_MP_11.1.7.zip
+        - ca_instl_win_2.0.200618.exe
+        - ca_srv_win64_11.2.7.zip
+
+    - name: Copy CAServerResponseFile.properties Template
+      win_copy:
+        src: templates\CAServerResponseFile.properties.j2
+        dest: C:\CognosData\ResponseFiles\CAServerResponseFile.properties
+
+    - name: Install Cognos Server
+      win_command: >
+        C:\path\to\ca_instl_win_2.0.200618.exe 
+        -DREPO=C:\CognosData\Software\ca_client_MP_11.1.7.zip 
+        -i silent 
+        -f C:\CognosData\ResponseFiles\CAServerResponseFile.properties
+      ignore_errors: yes
+
+    - name: Verify CAServer Installation
+      win_stat:
+        path: C:\Cognos Install\ibm\cognos\analytics
+      register: caserver_installation
+
+    - name: Confirm Server Installation Success
+      assert:
+        that:
+          - caserver_installation.stat.exists == true
+          - "'FTR_APPTIER,FTR_DATATIER,FTR_GATETIER' in caserver_installation.stat.content|default('')"
+
+- name: Install Cognos Client
+  hosts: cognos_clients
+  vars:
+    install_framework_manager: true
+
+  tasks:
+    - name: Copy CAClientResponseFile.properties Template
+      win_copy:
+        src: templates/CAClientResponseFile.properties.j2
+        dest: C:\CognosData\ResponseFiles\CAClientResponseFile.properties
+
+    - name: Install CAClient
+      win_command: >
+        Ca_instl_win_2.0.200618.exe 
+        -DREPO=C:\\CognosData\Software\ca_client.MP_11.1.7.zip 
+        -i silent 
+        -f C:\CongosData\ResponseFiles\CAClientResponseFile.properties
+      ignore_errors: yes
+
+    - name: Verify CAClient Installation
+      win_stat:
+        path: C:\Cognos Install\ibm\cognos\fm
+      register: caclient_installation
+
+    - name: Confirm Client Installation Success
+      assert:
+        that:
+          - caclient_installation.stat.exists == true
+          - "'FTR_FM' in caclient_installation.stat.content|default('')"
+
+- name: Install Transformer
+  hosts: transformer_servers
+  vars:
+
+  tasks:
+    - name: Copy TransformerResponse.ats Template
+      win_copy:
+        src: templates\TransformerResponse.ats.j2
+        dest: C:\CognosData\ResponseFiles\TransformerResponse.ats
+
+    - name: Install Transformer
+      win_command: >
+        C:\CognosData\Software\trnsfrmr_win_11.0.0.101_ml.tar\win32\issetup        
+        -s C:\CognosData\ResponseFiles\TransformerResponse.ats
+      ignore_errors: yes
+
+    - name: Verify Transformer Installation
+      win_stat:
+        path: C:\Cognos Install\ibm\cognos\transformer
+      register: transformer_installation
+
+    - name: Confirm Transformer Installation Success
+      assert:
+        that:
+          - transformer_installation.stat.exists == true
+          - "cmplst.txt" in transformer_installation.stat.files|list

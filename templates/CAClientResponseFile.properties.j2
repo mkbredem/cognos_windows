@@ -1,0 +1,31 @@
+#Template of Response file for IBM Cognos Analytic Software Silent installation# 
+#This template is for installing client tools.#
+#(C) Copyright IBM(R) Corp. 2016. All rights reserved.
+
+#Remember to make a copy of this file before editing it.
+
+#Do not change this variable value, as this is not a CA install 
+#-----
+BISRVR_CA_INSTALL=0
+
+#Do not change this, as this response file is for tools 
+#----
+BISRVR_CA_TOOLS_INSTALL=1
+
+#Set only one client tool you need to install to 1
+#-----
+CA_FM={{ install_framework_manager | ternary(1,0) | default(1) }}
+CA_LCM=0
+CA_DCUBEMODEL=0
+CA_DQA=0
+CA_JUPYTER=0
+
+#Set the installation location
+USER_INSTALL_DIR=C:\\Cognos Install\\ibm\\cognos\\fm
+
+#repo zip file full path
+REPO=C:\CognosData\Software\ca_client_MP_11.1.7.zip
+
+#Sets Windows Shortcuts
+BIMODEL_SHORTCUT=IBM Cognos Framework Manager 
+BIMODEL_ALLUSERS=1
